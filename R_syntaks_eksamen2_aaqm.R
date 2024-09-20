@@ -42,7 +42,7 @@ library(fixest)
 #install.packages("modelsummary")
 library(modelsummary)
 
-                                ### --- Indl?ser data --- ###
+                                ### --- Loading data --- ###
 
 df = read_dta(file = "Sesame.dta")
 describe(df)
@@ -50,7 +50,7 @@ View(df)
 
 
   
-                              ### --- Omkodninger og deskriptiv statistik --- ### 
+                              ### --- Recoding and descriptiv analysis --- ### 
 
 df <- mutate(df, view_enc = recode(viewenc, `1`= 1, `2` = 0))
 describeBy(df, df$viewenc)
@@ -72,7 +72,7 @@ describeBy(df, df$setting_new)
 
 
                                 ### --- 2. Balance Test --- ### 
-# Anova test for fordeligen af grupper
+# Anova test for distribution between groups
 
 bal.test2 <- aov(sex_new~view_enc, data=df)
 summary(bal.test2) # k?n ikke-signifikant 
@@ -94,7 +94,7 @@ describeBy(df, df$regular)
 
 
 
-# G?r k?n, setting, view_enc, site og regular til faktorvariable
+# Making gender, setting, view_enc, site and regular to factorvariables
 df$sex_new <- as.factor(df$sex_new)
 df$setting_new <- as.factor(df$setting_new)
 df$view_enc <- as.factor(df$view_enc)
@@ -103,14 +103,14 @@ df$regular <- as.factor(df$regular)
 
 
 
-                                          ### --- ATE for A view_enc --- ###
+                                          ### --- ATE for view_enc --- ###
 
-#F?rst en ttest for signifikants niveauet
+# Firstly a ttest for the p value bewteen view encourgement and post knowledge of numbers
 t.test(df$postnumb~df$view_enc, var.equal=TRUE)
 
 
 
-# Den gennemsnitlige effekt af view_enc 
+# The average treatment effect of view_enc 
 plot.data.view_enc <- df %>%
   group_by(view_enc)%>%
   summarise(
@@ -119,14 +119,14 @@ plot.data.view_enc <- df %>%
     uci = t.test(postnumb, conf.level = 0.95)$conf.int[2])
 plot.data.view_enc
 
-# visualisering 
+# Visualization 
 ggplot(plot.data.view_enc, aes(view_enc, mean)) +        
   geom_point() +
   geom_errorbar(aes(ymin = lci, ymax = uci)) +
   labs(x= "Opfordring 0=nej 1=ja", y = "Viden om tal")
 
 
-# OLS regression med view_enc og interaktion med site
+# OLS regression with view_enc and interaction with site
 reg_view_enc2 = lm(postnumb~view_enc*site+age+sex_new+setting_new+prenumb, data=df) 
 summary(reg_view_enc2)
 
@@ -138,7 +138,7 @@ stargazer(reg_view_enc2)
 
                               
 
-                                    ### --- Regular B - vist gennem OLS --- ### 
+                                    ### --- Regular B - using OLS --- ### 
 
 reg_regular2 = lm(postnumb~regular*site+age+sex_new+prenumb+site+setting_new, data=df) 
 summary(reg_regular2)
@@ -152,7 +152,7 @@ stargazer(reg_view_enc2, regular2)
                                     ### --- D cluster SE for view_enc --- ### 
 
 
-# Klynge for view_enc med site som interaktion  
+# Cluster for view_enc with site as interaction  
 reg_cluster1 <- feols(postnumb~view_enc*site+age+sex_new+setting_new+prenumb, 
                       cluster = ~ site,  data =  df)
 summary(reg_cluster1)
@@ -165,7 +165,7 @@ modelsummary(reg_cluster1)
                               ### --- D cluster SE for regular --- ### 
 
 
-# Klynge for regular med site interaktion  
+# Cluster for regular with site as interaction  
 reg_cluster2 <- feols(postnumb~regular*site+age+sex_new+setting_new+site+prenumb, 
                       cluster = ~ site,  data =  df)
 summary(reg_cluster2)
